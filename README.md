@@ -8,20 +8,21 @@ docker build . --tag floor-price-checker
 ```
 
 ### Input
-This aplication is reading an input file following this format :
-(If you own 2 Nfts of the collection 1 and only 1 Nft from collection 2 and 3)
+This aplication is reading an input file following this format :  
+(exemple : If you own 2 Nfts of the collection 1 and only 1 Nft from collection 2 and 3)
 ```
 collection_id_1
 collection_id_1
 collection_id_2
 collection_id_3
+...
 ```
 The collection id can be found in the url of the Opensea Collection Page  
 ie : for https://opensea.io/collection/boredapeyachtclub, the id is ```boredapeyachtclub```
 
 ### Run
-It's possible to run the application localy to test it out before deploying :
-(It's need to put an input file inside ```/tmp/iexec_in/``` folder)
+It is possible to run the application localy to test it out before deploying :
+(It is needed to put an input file inside ```/tmp/iexec_in/``` folder)
 ```
 rm -rf /tmp/iexec_out && \
 docker run \
