@@ -11,6 +11,7 @@ import (
 )
 
 var sum float64
+var temp float64
 
 type Collection struct {
 	Stats struct {
@@ -53,12 +54,12 @@ func floorPrice(collection_name string) string {
 
 	json.Unmarshal(body, &col1)
 
-	sum += col1.Stats.Floor_price
+	temp = col1.Stats.Floor_price //Temporary storing the value of the floor price
 
 	if col1.Stats.Floor_price == 0 {
-		return collection_name + " est impossible a trouver sur Opensea"
+		return "  x " + collection_name + " cannot be found on Opensea"
 	} else {
-		return collection_name + " Floor price = " + fmt.Sprintf("%f", col1.Stats.Floor_price) + " eth"
+		return "--> " + collection_name + " Floor price = " + fmt.Sprintf("%f", col1.Stats.Floor_price) + " eth"
 	}
 }
 
@@ -84,6 +85,8 @@ func main() {
 	iexec_in := os.Getenv("IEXEC_IN")
 	iexec_input_file := os.Getenv("IEXEC_INPUT_FILE_NAME_1")
 
+	temp = 0
+
 	entries, readErr := readInput(iexec_in + "/" + iexec_input_file)
 	if readErr != nil {
 		log.Fatal(readErr)
@@ -95,11 +98,12 @@ func main() {
 		log.Fatal(err)
 	}
 	for _, col := range entries {
+		sum += temp //Incrementing the total value
 		if _, err := fr.Write([]byte(floorPrice(col) + "\n")); err != nil {
 			log.Fatal(err)
 		}
 	}
-	if _, err := fr.Write([]byte("Le total estime de votre portfolio est de " + fmt.Sprintf("%f", sum) + " eth\n Soit " + fmt.Sprintf("%f", sum*ethPrice()) + " Usd")); err != nil {
+	if _, err := fr.Write([]byte("------------- \n The estimate total value of your portfolio is : " + fmt.Sprintf("%f", sum) + " eth\n Or " + fmt.Sprintf("%f", sum*ethPrice()) + " Usd")); err != nil {
 		log.Fatal(err)
 	}
 	if err := fr.Close(); err != nil {

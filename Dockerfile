@@ -1,15 +1,8 @@
 # syntax=docker/dockerfile:1
-FROM golang:1.18.1
-WORKDIR /src
+FROM golang:1.16.0-alpine3.13
 
-COPY go.mod ./
+COPY ./src /app
 
-RUN go mod download
+RUN go build -buildmode=exe -o /app/nft-price-checker /app/app.go
 
-COPY src/*.go ./
-
-RUN go build -o /docker-gs-ping
-
-EXPOSE 8080
-
-CMD [ "/docker-gs-ping" ]
+ENTRYPOINT ["/app/nft-price-checker"]
