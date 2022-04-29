@@ -72,6 +72,22 @@ func ethPrice() float64 {
 	return pr1.Ethereum.Usd
 }
 
+func appendResult(fr *os.File, entries []string) {
+	for _, col := range entries {
+		fp := floorPrice(col)
+		sum += fp
+		if fp == 0 {
+			if _, err := fr.Write([]byte("  x " + col + " cannot be found on Opensea" + "\n")); err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			if _, err := fr.Write([]byte("--> " + col + " Floor price = " + fmt.Sprintf("%f", fp) + " eth" + "\n")); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+}
+
 func main() {
 
 	iexec_out := os.Getenv("IEXEC_OUT")
@@ -90,20 +106,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, col := range entries {
-		fp := floorPrice(col)
-		sum += fp
-		if fp == 0 {
-			if _, err := fr.Write([]byte("  x " + col + " cannot be found on Opensea" + "\n")); err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			if _, err := fr.Write([]byte("--> " + col + " Floor price = " + fmt.Sprintf("%f", fp) + " eth" + "\n")); err != nil {
-				log.Fatal(err)
-			}
-		}
 
-	}
+	appendResult(fr, entries)
+
 	if _, err := fr.Write([]byte("------------- \n The estimate total value of your portfolio is : " + fmt.Sprintf("%f", sum) + " eth\n Or " + fmt.Sprintf("%f", sum*ethPrice()) + " Usd")); err != nil {
 		log.Fatal(err)
 	}
