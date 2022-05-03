@@ -10,8 +10,6 @@ import (
 	"os"
 )
 
-var sum float64
-
 type Collection struct {
 	Stats struct {
 		Floor_price float64 `json:"floor_price"`
@@ -73,18 +71,19 @@ func ethPrice() float64 {
 }
 
 func writeFloorPricesAndTotalValueToResult(fr *os.File, entries []string) {
+	sum := 0.0
+	result := ""
 	for _, col := range entries {
 		fp := floorPrice(col)
 		sum += fp
 		if fp == 0 {
-			if _, err := fr.Write([]byte("  x " + col + " cannot be found on Opensea" + "\n")); err != nil {
-				log.Fatal(err)
-			}
+			result += ("  x " + col + " cannot be found on Opensea" + "\n")
 		} else {
-			if _, err := fr.Write([]byte("--> " + col + " Floor price = " + fmt.Sprintf("%f", fp) + " eth" + "\n")); err != nil {
-				log.Fatal(err)
-			}
+			result += ("--> " + col + " Floor price = " + fmt.Sprintf("%f", fp) + " eth" + "\n")
 		}
+	}
+	if _, err := fr.Write([]byte(result + "\n")); err != nil {
+		log.Fatal(err)
 	}
 	if _, err := fr.Write([]byte("------------- \n The estimate total value of your portfolio is : " + fmt.Sprintf("%f", sum) + " eth\n Or " + fmt.Sprintf("%f", sum*ethPrice()) + " Usd")); err != nil {
 		log.Fatal(err)
@@ -96,8 +95,6 @@ func main() {
 	iexec_out := os.Getenv("IEXEC_OUT")
 	iexec_in := os.Getenv("IEXEC_IN")
 	iexec_input_file := os.Getenv("IEXEC_INPUT_FILE_NAME_1")
-
-	sum = 0
 
 	entries, readErr := readInput(iexec_in + "/" + iexec_input_file)
 	if readErr != nil {
