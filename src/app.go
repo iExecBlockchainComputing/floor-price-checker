@@ -70,7 +70,7 @@ func ethPrice() float64 {
 	return pr1.Ethereum.Usd
 }
 
-func writeFloorPricesAndTotalValueToResult(fr *os.File, entries []string) {
+func writeFloorPricesAndTotalValueToResult(entries []string) string {
 	sum := 0.0
 	result := ""
 	for _, col := range entries {
@@ -82,10 +82,20 @@ func writeFloorPricesAndTotalValueToResult(fr *os.File, entries []string) {
 			result += ("--> " + col + " Floor price = " + fmt.Sprintf("%f", fp) + " eth" + "\n")
 		}
 	}
-	if _, err := fr.Write([]byte(result + "\n")); err != nil {
+	result += ("------------- \n The estimate total value of your portfolio is : " + fmt.Sprintf("%f", sum) + " eth\n Or " + fmt.Sprintf("%f", sum*ethPrice()) + " Usd")
+
+	return result
+}
+
+func writeFile(file string, str string) {
+	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
 		log.Fatal(err)
 	}
-	if _, err := fr.Write([]byte("------------- \n The estimate total value of your portfolio is : " + fmt.Sprintf("%f", sum) + " eth\n Or " + fmt.Sprintf("%f", sum*ethPrice()) + " Usd")); err != nil {
+	if _, err := f.Write([]byte(str + "\n")); err != nil {
+		log.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -102,26 +112,8 @@ func main() {
 	}
 
 	// Append some results in /iexec_out/
-	fr, err := os.OpenFile(iexec_out+"/result.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	writeFloorPricesAndTotalValueToResult(fr, entries)
-
-	if err := fr.Close(); err != nil {
-		log.Fatal(err)
-	}
+	writeFile(iexec_out+"/result.txt", writeFloorPricesAndTotalValueToResult(entries))
 
 	// Declare everything is computed
-	fc, err := os.OpenFile(iexec_out+"/computed.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if _, err := fc.Write([]byte("{ \"deterministic-output-path\" : \"" + iexec_out + "/result.txt\" }")); err != nil {
-		log.Fatal(err)
-	}
-	if err := fc.Close(); err != nil {
-		log.Fatal(err)
-	}
+	writeFile(iexec_out+"/computed.json", ("{ \"deterministic-output-path\" : \"" + iexec_out + "/result.txt\" }"))
 }
