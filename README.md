@@ -32,7 +32,7 @@ docker run \
     -e IEXEC_OUT=/iexec_out \
     -e IEXEC_INPUT_FILE_NAME_1=input \
     -e IEXEC_INPUT_FILES_NUMBER=1 \
-    floor-price-checker
+    nft-price-checker
 ```
 Once the execution ends, the result should be found in the folder
 `/tmp/iexec_out`.
