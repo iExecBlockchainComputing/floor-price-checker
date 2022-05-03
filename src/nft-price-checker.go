@@ -70,7 +70,7 @@ func ethPrice() float64 {
 	return pr1.Ethereum.Usd
 }
 
-func writeFloorPricesAndTotalValueToResult(entries []string) string {
+func getFloorPricesAndTotalValue(entries []string) string {
 	sum := 0.0
 	result := ""
 	for _, col := range entries {
@@ -112,7 +112,7 @@ func main() {
 	}
 
 	// Append some results in /iexec_out/
-	writeFile(iexec_out+"/result.txt", writeFloorPricesAndTotalValueToResult(entries))
+	writeFile(iexec_out+"/result.txt", getFloorPricesAndTotalValue(entries))
 
 	// Declare everything is computed
 	writeFile(iexec_out+"/computed.json", ("{ \"deterministic-output-path\" : \"" + iexec_out + "/result.txt\" }"))
