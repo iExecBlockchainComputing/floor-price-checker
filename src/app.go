@@ -72,7 +72,7 @@ func ethPrice() float64 {
 	return pr1.Ethereum.Usd
 }
 
-func appendResult(fr *os.File, entries []string) {
+func writeFloorPricesAndTotalValueToResult(fr *os.File, entries []string) {
 	for _, col := range entries {
 		fp := floorPrice(col)
 		sum += fp
@@ -85,6 +85,9 @@ func appendResult(fr *os.File, entries []string) {
 				log.Fatal(err)
 			}
 		}
+	}
+	if _, err := fr.Write([]byte("------------- \n The estimate total value of your portfolio is : " + fmt.Sprintf("%f", sum) + " eth\n Or " + fmt.Sprintf("%f", sum*ethPrice()) + " Usd")); err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -107,11 +110,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	appendResult(fr, entries)
+	writeFloorPricesAndTotalValueToResult(fr, entries)
 
-	if _, err := fr.Write([]byte("------------- \n The estimate total value of your portfolio is : " + fmt.Sprintf("%f", sum) + " eth\n Or " + fmt.Sprintf("%f", sum*ethPrice()) + " Usd")); err != nil {
-		log.Fatal(err)
-	}
 	if err := fr.Close(); err != nil {
 		log.Fatal(err)
 	}
