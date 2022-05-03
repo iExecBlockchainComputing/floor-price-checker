@@ -73,6 +73,7 @@ func ethPrice() float64 {
 func getFloorPricesAndTotalValue(entries []string) string {
 	sum := 0.0
 	result := ""
+	estimate := ""
 	for _, col := range entries {
 		fp := floorPrice(col)
 		sum += fp
@@ -82,7 +83,12 @@ func getFloorPricesAndTotalValue(entries []string) string {
 			result += ("--> " + col + " Floor price = " + fmt.Sprintf("%f", fp) + " eth" + "\n")
 		}
 	}
-	result += ("------------- \n The estimate total value of your portfolio is : " + fmt.Sprintf("%f", sum) + " eth\n Or " + fmt.Sprintf("%f", sum*ethPrice()) + " Usd")
+	if sum > 0 {
+		estimate = fmt.Sprintf("%f", sum) + " eth\n Or " + fmt.Sprintf("%f", sum*ethPrice()) + " Usd"
+	} else {
+		estimate = "0 eth\n Or 0 Usd"
+	}
+	result += ("------------- \n The estimate total value of your portfolio is : " + estimate)
 
 	return result
 }
