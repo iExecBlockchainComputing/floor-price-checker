@@ -4,7 +4,7 @@
 ### Build
 First, let's build the docker image
 ```
-docker build . --tag floor-price-checker
+docker build . --tag nft-price-checker
 ```
 
 ### Input
