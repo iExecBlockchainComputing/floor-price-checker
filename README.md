@@ -42,3 +42,31 @@ cat /tmp/iexec_out/result.txt
 
 ### Deploy
 To deploy your app, follow the instructions on the IExec Documentation : https://docs.iex.ec/for-developers/your-first-app
+
+Then, you can run your dApp with the ```iexec app run``` command (you can add as much parameters and options as you want, follow the SDK and CLI documentation to do so) :  
+```
+iexec app run --watch
+```
+
+### Confidential Computing and TEE
+In order to benefit from the computation confidentiality offered by Trusted Execution Environnements, we first need to sconify our dApp.  
+
+To do that, just run the ```./sconify.sh``` script.  
+```
+./sconify.sh
+```
+It will build a sconified docker image of the app, that you can deploy the same way as a Standard dApp (like you did before following the iExec documentation).  
+The code will now run inside a private enclave.  
+
+You just have to add the ```--tag tee``` option in your run command :
+```
+iexec app run --watch --tag tee
+```
+
+But moreover, you can also add layer of confidentiality by protecting your input and output data.
+
+### Datasets
+Following this documentation https://docs.iex.ec/for-developers/confidential-computing/sgx-encrypted-dataset, you will be able to encrypt your input file and then give your "secret" (encryption key) to the SMS (Secret Management Service). Like this, no one (except you) will be able to read what your input data was.
+
+### End to End Encryption
+Finally, in order to achieve End to End encryption, you can encrypt your result following this documentation https://docs.iex.ec/for-developers/confidential-computing/end-to-end-encryption

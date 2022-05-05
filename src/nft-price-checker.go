@@ -35,6 +35,7 @@ func readInput(path string) ([]string, error) {
 	for scanner.Scan() {
 		entries = append(entries, scanner.Text())
 	}
+
 	return entries, scanner.Err()
 }
 
@@ -70,6 +71,7 @@ func ethPrice() float64 {
 	return pr1.Ethereum.Usd
 }
 
+// Fetching prices from the results of the API to build the final string
 func getFloorPricesAndTotalValue(entries []string) string {
 	sum := 0.0
 	result := ""
@@ -93,6 +95,7 @@ func getFloorPricesAndTotalValue(entries []string) string {
 	return result
 }
 
+// Writing into the result file
 func writeFile(file string, str string) {
 	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
@@ -108,11 +111,21 @@ func writeFile(file string, str string) {
 
 func main() {
 
+	var entries []string
+	var readErr error
+
 	iexec_out := os.Getenv("IEXEC_OUT")
 	iexec_in := os.Getenv("IEXEC_IN")
 	iexec_input_file := os.Getenv("IEXEC_INPUT_FILE_NAME_1")
+	dataset_file_name := os.Getenv("IEXEC_DATASET_FILENAME")
 
-	entries, readErr := readInput(iexec_in + "/" + iexec_input_file)
+	if iexec_input_file != "" {
+		entries, readErr = readInput(iexec_in + "/" + iexec_input_file)
+	} else if dataset_file_name != "" {
+		entries, readErr = readInput(iexec_in + "/" + dataset_file_name)
+	} else {
+		log.Fatal("Input or Dataset files are missing, exiting")
+	}
 	if readErr != nil {
 		log.Fatal(readErr)
 	}
