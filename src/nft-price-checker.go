@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 type Collection struct {
@@ -23,20 +24,22 @@ type Price struct {
 }
 
 // Reading input.txt file
-func readInput(path string) ([]string, error) {
+func readInput(path string) ([]string, []string, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer file.Close()
 
 	var entries []string
+	var nb []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		entries = append(entries, scanner.Text())
+		entries = append(entries, scanner.Text()[:len(scanner.Text())-2])
+		nb = append(nb, scanner.Text()[len(scanner.Text())-1:])
 	}
 
-	return entries, scanner.Err()
+	return entries, nb, scanner.Err()
 }
 
 // Asking for Opensea's colections Floor Prices
@@ -72,17 +75,19 @@ func ethPrice() float64 {
 }
 
 // Fetching prices from the results of the API to build the final string
-func getFloorPricesAndTotalValue(entries []string) string {
+func getFloorPricesAndTotalValue(entries []string, nb []string) string {
 	sum := 0.0
 	result := ""
 	estimate := ""
-	for _, col := range entries {
+	for i, col := range entries {
 		fp := floorPrice(col)
-		sum += fp
+		fnb, _ := strconv.ParseFloat(nb[i], 64)
+		prod := (fnb * fp)
+		sum += prod
 		if fp == 0 {
 			result += ("  x " + col + " cannot be found on Opensea" + "\n")
 		} else {
-			result += ("--> " + col + " Floor price = " + fmt.Sprintf("%f", fp) + " eth" + "\n")
+			result += ("--> " + col + " Floor price = " + fmt.Sprintf("%f", fp) + " eth\n So " + nb[i] + "*" + fmt.Sprintf("%f", fp) + "=" + fmt.Sprintf("%f", prod) + " eth\n")
 		}
 	}
 	if sum > 0 {
@@ -112,6 +117,7 @@ func writeFile(file string, str string) {
 func main() {
 
 	var entries []string
+	var nb []string
 	var readErr error
 
 	iexec_out := os.Getenv("IEXEC_OUT")
@@ -120,9 +126,9 @@ func main() {
 	dataset_file_name := os.Getenv("IEXEC_DATASET_FILENAME")
 
 	if iexec_input_file != "" {
-		entries, readErr = readInput(iexec_in + "/" + iexec_input_file)
+		entries, nb, readErr = readInput(iexec_in + "/" + iexec_input_file)
 	} else if dataset_file_name != "" {
-		entries, readErr = readInput(iexec_in + "/" + dataset_file_name)
+		entries, nb, readErr = readInput(iexec_in + "/" + dataset_file_name)
 	} else {
 		log.Fatal("Input or Dataset files are missing, exiting")
 	}
@@ -131,7 +137,7 @@ func main() {
 	}
 
 	// Append some results in /iexec_out/
-	writeFile(iexec_out+"/result.txt", getFloorPricesAndTotalValue(entries))
+	writeFile(iexec_out+"/result.txt", getFloorPricesAndTotalValue(entries, nb))
 
 	// Declare everything is computed
 	writeFile(iexec_out+"/computed.json", ("{ \"deterministic-output-path\" : \"" + iexec_out + "/result.txt\" }"))

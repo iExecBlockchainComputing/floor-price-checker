@@ -9,13 +9,11 @@ docker build . --tag nft-price-checker
 
 ### Input
 This aplication is reading an input file following this format :  
-(exemple : If you own 2 Nfts of the collection 1 and only 1 Nft from collection 2 and 3)
+(exemple : If you own 2 Nfts of the first collection, 1 of the 2nd and 3 of the 3rd)
 ```
-collection_id_1
-collection_id_1
-collection_id_2
-collection_id_3
-...
+collection_id_1,2
+collection_id_2,1
+collection_id_3,3
 ```
 The collection id can be found in the url of the Opensea Collection Page  
 ie : for https://opensea.io/collection/boredapeyachtclub, the id is ```boredapeyachtclub```
