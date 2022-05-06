@@ -8,9 +8,17 @@ docker build . --tag nft-price-checker
 ```
 
 ### Input
-This aplication is reading an input file following this format :  
-(exemple : If you own 2 Nfts of the first collection, 1 of the 2nd and 3 of the 3rd)
+This solution reads an input file. You can then choose between two formats.  
+1) Either you enter directly the Ethereum address of your wallet containing the nfts
 ```
+<input.txt>
+0x0123456789012345678901234567890123456789
+```
+2) Or, you can scpeficy the Collections (and numbers of items) you want to track :  
+Here is an exemple below for the case => You own 2 Nfts of the first collection, 1 of the 2nd and 3 of the 3rd. (Don't forget to add "```Collections:```" on the first line of your file)
+```
+<input.txt>
+Collections:
 collection_id_1,2
 collection_id_2,1
 collection_id_3,3

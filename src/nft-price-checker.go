@@ -23,6 +23,11 @@ type Price struct {
 	}
 }
 
+type Account_collection struct {
+	Slug              string  `json:"slug"`
+	Owned_asset_count float64 `json:"owned_asset_count"`
+}
+
 // Reading input.txt file
 func readInput(path string) ([]string, []string, error) {
 	file, err := os.Open(path)
@@ -33,13 +38,45 @@ func readInput(path string) ([]string, []string, error) {
 
 	var entries []string
 	var nb []string
+	line := 1
 	scanner := bufio.NewScanner(file)
+
 	for scanner.Scan() {
-		entries = append(entries, scanner.Text()[:len(scanner.Text())-2])
-		nb = append(nb, scanner.Text()[len(scanner.Text())-1:])
+		if line == 1 {
+			if scanner.Text() != "Collections:" {
+				return askAdress(scanner.Text(), scanner.Err())
+			}
+		} else if line != 1 {
+			entries = append(entries, scanner.Text()[:len(scanner.Text())-2])
+			nb = append(nb, scanner.Text()[len(scanner.Text())-1:])
+		}
+		line++
 	}
 
 	return entries, nb, scanner.Err()
+}
+
+//Asking API for an account (address)
+func askAdress(adr string, err error) ([]string, []string, error) {
+	var entries []string
+	var nb []string
+	var cols []Account_collection
+
+	url := fmt.Sprintf("https://api.opensea.io/api/v1/collections?asset_owner=%s&offset=0&limit=300", adr)
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Add("Accept", "application/json")
+	res, _ := http.DefaultClient.Do(req)
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+
+	json.Unmarshal(body, &cols)
+
+	for _, result := range cols {
+		entries = append(entries, result.Slug)
+		nb = append(nb, fmt.Sprintf("%f", result.Owned_asset_count))
+	}
+
+	return entries, nb, err
 }
 
 // Asking for Opensea's colections Floor Prices
