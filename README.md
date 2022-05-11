@@ -8,7 +8,7 @@ docker build . --tag nft-price-checker
 ```
 
 ### Input
-This solution reads an input file. You can then choose between two formats.  
+This solution reads either an input file or a dataset. You can then choose between two formats.  
 1) Either you enter directly the Ethereum address of your wallet containing the nfts
 ```
 <input.txt>
