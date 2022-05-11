@@ -23,9 +23,9 @@ type Price struct {
 	}
 }
 
-type Account_collection struct {
-	Slug              string  `json:"slug"`
-	Owned_asset_count float64 `json:"owned_asset_count"`
+type AccountCollection struct {
+	Slug            string  `json:"slug"`
+	OwnedAssetCount float64 `json:"owned_asset_count"`
 }
 
 // Reading input.txt file
@@ -44,7 +44,7 @@ func readInput(path string) ([]string, []string, error) {
 	for scanner.Scan() {
 		if line == 1 {
 			if scanner.Text() != "Collections:" {
-				return askAdress(scanner.Text(), scanner.Err())
+				return getCollectionsByWalletAdress(scanner.Text(), scanner.Err())
 			}
 		} else if line != 1 {
 			entries = append(entries, scanner.Text()[:len(scanner.Text())-2])
@@ -57,10 +57,10 @@ func readInput(path string) ([]string, []string, error) {
 }
 
 //Asking API for an account (address)
-func askAdress(adr string, err error) ([]string, []string, error) {
+func getCollectionsByWalletAdress(adr string, err error) ([]string, []string, error) {
 	var entries []string
 	var nb []string
-	var cols []Account_collection
+	var cols []AccountCollection
 
 	url := fmt.Sprintf("https://api.opensea.io/api/v1/collections?asset_owner=%s&offset=0&limit=300", adr)
 	req, _ := http.NewRequest("GET", url, nil)
@@ -73,7 +73,7 @@ func askAdress(adr string, err error) ([]string, []string, error) {
 
 	for _, result := range cols {
 		entries = append(entries, result.Slug)
-		nb = append(nb, fmt.Sprintf("%f", result.Owned_asset_count))
+		nb = append(nb, fmt.Sprintf("%f", result.OwnedAssetCount))
 	}
 
 	return entries, nb, err
