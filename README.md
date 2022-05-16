@@ -21,14 +21,14 @@ This solution reads a .json input file following this format :
     ]
 }
 ```
-If you fill the `ownerAddress`, the dapp will directly ask Opensea for the collections and nft that you own, so you doesn't have to fill the `"collections"` part. It will then look like this :
+If you fill the `ownerAddress`, the dapp will directly ask Opensea for the collections and nft that you own, so you doesn't have to manually fill the `"collections"` part :
 ```
 {
     "ownerAddress": "0x01234567891012345678910123456789101234567891",
     "collections": []
 }
 ```
-If you want to look for specific collections, you can fill the `collection` part with the Opensea collection id (or slug) and the number of asset that you own from that collection. It will then look like this :
+**Or**, If you want to inspect specific collections (and not a 0x address), you can fill the `"collections"` part with the Opensea collection id (or slug) and the number of asset that you own from that collection :
 ```{
     "ownerAddress": "",
     "collections": [
@@ -81,7 +81,7 @@ iexec app run --watch
 ### Confidential Computing and TEE
 In order to benefit from the computation confidentiality offered by Trusted Execution Environnements, we first need to sconify our dApp.  
 
-To do that, just run the `./sconify.sh` script.  
+To do that, just run the following : 
 ```
 ./sconify.sh
 ```
@@ -96,7 +96,7 @@ iexec app run --watch --tag tee
 But moreover, you can also add layer of confidentiality by protecting your input and output data.
 
 ### Datasets
-Following this documentation https://docs.iex.ec/for-developers/confidential-computing/sgx-encrypted-dataset, you will be able to encrypt your input file and then give your "secret" (encryption key) to the SMS (Secret Management Service). Like this, no one (except you) will be able to read what your input data was.
+Following [this documentation](https://docs.iex.ec/for-developers/confidential-computing/sgx-encrypted-dataset), you will be able to encrypt your input file and then give your "secret" (encryption key) to the SMS (Secret Management Service). Like this, no one (except you) will be able to read what your input data is.
 
 ### End to End Encryption
-Finally, in order to achieve End to End encryption, you can encrypt your result following this documentation https://docs.iex.ec/for-developers/confidential-computing/end-to-end-encryption
+Finally, in order to achieve End-to-End encryption, you can encrypt your result following [this documentation](https://docs.iex.ec/for-developers/confidential-computing/end-to-end-encryption)
