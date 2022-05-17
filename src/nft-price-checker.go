@@ -38,10 +38,37 @@ type Input struct {
 	Collections  []Collection `json:"collections"`
 }
 
-func readInput(path string) (Input, error) {
+func get(url string) []byte {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	req.Header.Add("Accept", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return body
+}
+
+func readInput(path string) ([]Collection, error) {
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		return Input{}, err
+		return []Collection{}, err
 	}
 
 	var inputFile Input
@@ -51,7 +78,7 @@ func readInput(path string) (Input, error) {
 		return getCollectionsByWalletAdress(inputFile.OwnerAddress, err)
 	}
 
-	return inputFile, err
+	return inputFile.Collections, err
 }
 
 //get nft collections owned by a specific wallet address :
@@ -89,16 +116,11 @@ func readInput(path string) (Input, error) {
 	},
 	...
 ]*/
-func getCollectionsByWalletAdress(ownerAddress string, err error) (Input, error) {
+func getCollectionsByWalletAdress(ownerAddress string, err error) ([]Collection, error) {
 	var inputFile Input
 	var owner []OwnerCollection
 
-	url := fmt.Sprintf("https://api.opensea.io/api/v1/collections?asset_owner=%s&offset=0&limit=300", ownerAddress)
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("Accept", "application/json")
-	res, _ := http.DefaultClient.Do(req)
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
+	body := get(fmt.Sprintf("https://api.opensea.io/api/v1/collections?asset_owner=%s&offset=0&limit=300", ownerAddress))
 
 	json.Unmarshal(body, &owner)
 
@@ -106,19 +128,14 @@ func getCollectionsByWalletAdress(ownerAddress string, err error) (Input, error)
 		inputFile.Collections = append(inputFile.Collections, Collection{collection.Slug, collection.OwnedAssetCount})
 	}
 
-	return inputFile, err
+	return inputFile.Collections, err
 }
 
 // Asking for Opensea's colections Floor Prices
 func floorPrice(collection_name string) float64 {
 	var colllectionFP CollectionFloorPrice
 
-	url := fmt.Sprintf("https://api.opensea.io/api/v1/collection/%s/stats", collection_name)
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("Accept", "application/json")
-	res, _ := http.DefaultClient.Do(req)
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
+	body := get(fmt.Sprintf("https://api.opensea.io/api/v1/collection/%s/stats", collection_name))
 
 	json.Unmarshal(body, &colllectionFP)
 
@@ -129,12 +146,7 @@ func floorPrice(collection_name string) float64 {
 func ethPrice() float64 {
 	var price EthPrice
 
-	url := fmt.Sprintf("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd")
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("Accept", "application/json")
-	res, _ := http.DefaultClient.Do(req)
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
+	body := get(fmt.Sprintf("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"))
 
 	json.Unmarshal(body, &price)
 
@@ -142,24 +154,24 @@ func ethPrice() float64 {
 }
 
 // Fetching prices from the results of the API to build the final string
-func getFloorPricesAndTotalValue(inputFile Input) string {
+func getFloorPricesAndTotalValue(inputCollections []Collection) string {
 	ethSum := 0.0
 	result := ""
 	usdEstimate := ""
-	for _, inputCollection := range inputFile.Collections {
+	for _, inputCollection := range inputCollections {
 		inputCollectionFloorPrice := floorPrice(inputCollection.CollectionID)
 		inputCollectionNumberOfAssets := inputCollection.Count
 		ethCollectionTotalEstimate := (inputCollectionFloorPrice * inputCollectionNumberOfAssets)
 		ethSum += ethCollectionTotalEstimate
 		if inputCollectionFloorPrice == 0 {
-			result += ("  x " + inputCollection.CollectionID + " cannot be found on Opensea" + "\n")
+			result += fmt.Sprintf("  x %s cannot be found on Opensea \n", inputCollection.CollectionID)
 		} else {
-			result += ("--> " + inputCollection.CollectionID + " Floor price = " + fmt.Sprintf("%f", inputCollectionFloorPrice) + " eth\n")
-			result += (" So " + fmt.Sprintf("%f", inputCollectionNumberOfAssets) + "*" + fmt.Sprintf("%f", inputCollectionFloorPrice) + "=" + fmt.Sprintf("%f", ethCollectionTotalEstimate) + " eth\n")
+			result += fmt.Sprintf("--> %s Floor price = %f eth\n", inputCollection.CollectionID, inputCollectionFloorPrice)
+			result += fmt.Sprintf(" So %f*%f=%f eth\n", inputCollectionNumberOfAssets, inputCollectionFloorPrice, ethCollectionTotalEstimate)
 		}
 	}
 	if ethSum > 0 {
-		usdEstimate = fmt.Sprintf("%f", ethSum) + " eth\n Or " + fmt.Sprintf("%f", ethSum*ethPrice()) + " Usd"
+		usdEstimate = fmt.Sprintf("%f eth\n Or %f Usd", ethSum, ethSum*ethPrice())
 	} else {
 		usdEstimate = "0 eth\n Or 0 Usd"
 	}
@@ -172,19 +184,19 @@ func getFloorPricesAndTotalValue(inputFile Input) string {
 func writeFile(file string, str string) {
 	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	if _, err := f.Write([]byte(str + "\n")); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	if err := f.Close(); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }
 
 func main() {
 
-	var inputFile Input
+	var inputCollections []Collection
 	var readErr error
 
 	iexec_out := os.Getenv("IEXEC_OUT")
@@ -193,18 +205,18 @@ func main() {
 	dataset_file_name := os.Getenv("IEXEC_DATASET_FILENAME")
 
 	if iexec_input_file != "" {
-		inputFile, readErr = readInput(iexec_in + "/" + iexec_input_file)
+		inputCollections, readErr = readInput(iexec_in + "/" + iexec_input_file)
 	} else if dataset_file_name != "" {
-		inputFile, readErr = readInput(iexec_in + "/" + dataset_file_name)
+		inputCollections, readErr = readInput(iexec_in + "/" + dataset_file_name)
 	} else {
-		log.Fatal("Input or Dataset files are missing, exiting")
+		log.Fatalln("Input or Dataset files are missing, exiting")
 	}
 	if readErr != nil {
-		log.Fatal(readErr)
+		log.Fatalln(readErr)
 	}
 
 	// Append some results in /iexec_out/
-	writeFile(iexec_out+"/result.txt", getFloorPricesAndTotalValue(inputFile))
+	writeFile(iexec_out+"/result.txt", getFloorPricesAndTotalValue(inputCollections))
 
 	// Declare everything is computed
 	writeFile(iexec_out+"/computed.json", ("{ \"deterministic-output-path\" : \"" + iexec_out + "/result.txt\" }"))
