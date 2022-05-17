@@ -146,7 +146,7 @@ func floorPrice(collection_name string) float64 {
 func ethPrice() float64 {
 	var price EthPrice
 
-	body := get(fmt.Sprintf("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"))
+	body := get("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd")
 
 	json.Unmarshal(body, &price)
 
