@@ -89,11 +89,11 @@ func readInput(path string) (Input, error) {
 	},
 	...
 ]*/
-func getCollectionsByWalletAdress(adr string, err error) (Input, error) {
+func getCollectionsByWalletAdress(ownerAddress string, err error) (Input, error) {
 	var inputFile Input
 	var owner []OwnerCollection
 
-	url := fmt.Sprintf("https://api.opensea.io/api/v1/collections?asset_owner=%s&offset=0&limit=300", adr)
+	url := fmt.Sprintf("https://api.opensea.io/api/v1/collections?asset_owner=%s&offset=0&limit=300", ownerAddress)
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Add("Accept", "application/json")
 	res, _ := http.DefaultClient.Do(req)

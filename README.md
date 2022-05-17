@@ -11,7 +11,7 @@ docker build . --tag nft-price-checker
 This solution reads a .json input file following this format :
 ```
 {
-    "ownerAddress": 0x_owner_address,
+    "ownerAddress": "0x_owner_address",
     "collections": [
         {
             "collectionId": "collection_id",
@@ -21,16 +21,15 @@ This solution reads a .json input file following this format :
     ]
 }
 ```
-If you fill the `ownerAddress`, the dapp will directly ask Opensea for the collections and nft that you own, so you doesn't have to manually fill the `"collections"` part :
+If you fill the `ownerAddress`, the dapp will directly ask Opensea for the collections and nft that you own, so you don't have to manually fill the `collections` part :
 ```
 {
-    "ownerAddress": "0x01234567891012345678910123456789101234567891",
-    "collections": []
+    "ownerAddress": "0x01234567891012345678910123456789101234567891"
 }
 ```
-**Or**, If you want to inspect specific collections (and not a 0x address), you can fill the `"collections"` part with the Opensea collection id (or slug) and the number of asset that you own from that collection :
-```{
-    "ownerAddress": "",
+**Or**, If you want to inspect specific collections (and not a 0x address), you can fill (just) the `collections` part with the Opensea collection id (or slug) and the number of assets that you own from that collection :
+```
+{
     "collections": [
         {
             "collectionId": "nft-worlds",
