@@ -65,20 +65,21 @@ func get(url string) []byte {
 	return body
 }
 
-func readInput(path string) ([]Collection, error) {
+func readInput(path string) []Collection {
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		return []Collection{}, err
+		log.Fatalln(err)
+		return []Collection{}
 	}
 
-	var inputFile Input
-	json.Unmarshal(file, &inputFile)
+	var jsonInput Input
+	json.Unmarshal(file, &jsonInput)
 
-	if inputFile.OwnerAddress != "" {
-		return getCollectionsByWalletAdress(inputFile.OwnerAddress, err)
+	if jsonInput.OwnerAddress != "" {
+		return getCollectionsByWalletAdress(jsonInput.OwnerAddress)
 	}
 
-	return inputFile.Collections, err
+	return jsonInput.Collections
 }
 
 //get nft collections owned by a specific wallet address :
@@ -116,19 +117,19 @@ func readInput(path string) ([]Collection, error) {
 	},
 	...
 ]*/
-func getCollectionsByWalletAdress(ownerAddress string, err error) ([]Collection, error) {
-	var inputFile Input
-	var owner []OwnerCollection
+func getCollectionsByWalletAdress(ownerAddress string) []Collection {
+	var jsonInput Input
+	var ownerCollection []OwnerCollection
 
 	body := get(fmt.Sprintf("https://api.opensea.io/api/v1/collections?asset_owner=%s&offset=0&limit=300", ownerAddress))
 
-	json.Unmarshal(body, &owner)
+	json.Unmarshal(body, &ownerCollection)
 
-	for _, collection := range owner {
-		inputFile.Collections = append(inputFile.Collections, Collection{collection.Slug, collection.OwnedAssetCount})
+	for _, collection := range ownerCollection {
+		jsonInput.Collections = append(jsonInput.Collections, Collection{collection.Slug, collection.OwnedAssetCount})
 	}
 
-	return inputFile.Collections, err
+	return jsonInput.Collections
 }
 
 // Asking for Opensea's colections Floor Prices
@@ -197,7 +198,6 @@ func writeFile(file string, str string) {
 func main() {
 
 	var inputCollections []Collection
-	var readErr error
 
 	iexec_out := os.Getenv("IEXEC_OUT")
 	iexec_in := os.Getenv("IEXEC_IN")
@@ -205,14 +205,11 @@ func main() {
 	dataset_file_name := os.Getenv("IEXEC_DATASET_FILENAME")
 
 	if iexec_input_file != "" {
-		inputCollections, readErr = readInput(iexec_in + "/" + iexec_input_file)
+		inputCollections = readInput(iexec_in + "/" + iexec_input_file)
 	} else if dataset_file_name != "" {
-		inputCollections, readErr = readInput(iexec_in + "/" + dataset_file_name)
+		inputCollections = readInput(iexec_in + "/" + dataset_file_name)
 	} else {
 		log.Fatalln("Input or Dataset files are missing, exiting")
-	}
-	if readErr != nil {
-		log.Fatalln(readErr)
 	}
 
 	// Append some results in /iexec_out/
