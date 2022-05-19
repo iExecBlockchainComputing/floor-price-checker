@@ -8,21 +8,50 @@ docker build . --tag nft-price-checker
 ```
 
 ### Input
-This aplication is reading an input file following this format :  
-(exemple : If you own 2 Nfts of the collection 1 and only 1 Nft from collection 2 and 3)
+This solution reads a .json input file following this format :
 ```
-collection_id_1
-collection_id_1
-collection_id_2
-collection_id_3
-...
+{
+    "ownerAddress": "0x_owner_address",
+    "collections": [
+        {
+            "collectionId": "collection_id",
+            "count":  number_of_asset_owned
+        },
+        ...
+    ]
+}
 ```
+If you fill the `ownerAddress`, the dapp will directly ask Opensea for the collections and nft that you own, so you don't have to manually fill the `collections` part :
+```
+{
+    "ownerAddress": "0x01234567891012345678910123456789101234567891"
+}
+```
+**Or**, If you want to inspect specific collections (and not a 0x address), you can fill (just) the `collections` part with the Opensea collection id (or slug) and the number of assets that you own from that collection :
+```
+{
+    "collections": [
+        {
+            "collectionId": "nft-worlds",
+            "count": 2
+        },
+        {
+            "collectionId": "psychedelics-anonymous-genesis",
+            "count": 1
+        },
+        {
+            "collectionId": "iexec-nft",
+            "count": 3
+        }
+    ]
+}
+```  
 The collection id can be found in the url of the Opensea Collection Page  
-ie : for https://opensea.io/collection/boredapeyachtclub, the id is ```boredapeyachtclub```
+ie : for https://opensea.io/collection/boredapeyachtclub, the id is `boredapeyachtclub`
 
 ### Run
 It is possible to run the application localy to test it out before deploying :
-(It is needed to put an input file inside ```/tmp/iexec_in/``` folder)
+(It is needed to put an input file inside `/tmp/iexec_in/` folder)
 ```
 rm -rf /tmp/iexec_out && \
 docker run \
@@ -30,7 +59,7 @@ docker run \
     -v /tmp/iexec_out:/iexec_out \
     -e IEXEC_IN=/iexec_in \
     -e IEXEC_OUT=/iexec_out \
-    -e IEXEC_INPUT_FILE_NAME_1=input \
+    -e IEXEC_INPUT_FILE_NAME_1=input.json \
     -e IEXEC_INPUT_FILES_NUMBER=1 \
     nft-price-checker
 ```
@@ -42,3 +71,31 @@ cat /tmp/iexec_out/result.txt
 
 ### Deploy
 To deploy your app, follow the instructions on the IExec Documentation : https://docs.iex.ec/for-developers/your-first-app
+
+Then, you can run your dApp with the `iexec app run` command (you can add as much parameters and options as you want, follow the SDK and CLI documentation to do so) :  
+```
+iexec app run --watch
+```
+
+### Confidential Computing and TEE
+In order to benefit from the computation confidentiality offered by Trusted Execution Environnements, we first need to sconify our dApp.  
+
+To do that, just run the following : 
+```
+./sconify.sh
+```
+It will build a sconified docker image of the app, that you can deploy the same way as a Standard dApp (like you did before following the iExec documentation).  
+The code will now run inside a private enclave.  
+
+You just have to add the `--tag tee` option in your run command :
+```
+iexec app run --watch --tag tee
+```
+
+But moreover, you can also add layer of confidentiality by protecting your input and output data.
+
+### Datasets
+Following [this documentation](https://docs.iex.ec/for-developers/confidential-computing/sgx-encrypted-dataset), you will be able to encrypt your input file and then give your "secret" (encryption key) to the SMS (Secret Management Service). Like this, no one (except you) will be able to read what your input data is.
+
+### End to End Encryption
+Finally, in order to achieve End-to-End encryption, you can encrypt your result following [this documentation](https://docs.iex.ec/for-developers/confidential-computing/end-to-end-encryption)
