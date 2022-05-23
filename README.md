@@ -23,12 +23,14 @@ This solution reads a .json input file following this format :
 ```
 If you fill the `ownerAddress`, the dapp will directly ask Opensea for the collections and nft that you own, so you don't have to manually fill the `collections` part :
 ```
+<input.json>
 {
     "ownerAddress": "0x01234567891012345678910123456789101234567891"
 }
 ```
 **Or**, If you want to inspect specific collections (and not a 0x address), you can fill (just) the `collections` part with the Opensea collection id (or slug) and the number of assets that you own from that collection :
 ```
+<input.json>
 {
     "collections": [
         {
@@ -49,6 +51,28 @@ If you fill the `ownerAddress`, the dapp will directly ask Opensea for the colle
 The collection id can be found in the url of the Opensea Collection Page  
 ie : for https://opensea.io/collection/boredapeyachtclub, the id is `boredapeyachtclub`
 
+### Output
+The dapp is compatible with either "web2" (IPFS) or "web3" (callback) output. You just have to specifiy the wanted argument in the iexec_args.
+
+- The web2 workflow will produce a `/iexec_out/result.txt` file following a detailled plain text format :  
+```
+</iexec_out/result.txt>
+--> nft-worlds Floor price = 3.940000 eth
+ So 2.000000*3.940000=7.880000 eth
+--> psychedelics-anonymous-genesis Floor price = 1.940000 eth
+ So 1.000000*1.940000=1.940000 eth
+  x iexec-nft cannot be found on Opensea 
+------------- 
+ The estimate total value of your portfolio is : 9.820000 eth
+ Or 20345.861600 Usd
+```
+
+- The web3 workflow is designed to return the Usd global estimate of your portfolio as a callback-data. Thus, there is no `result.txt` file but in the `computed.json` you will find the `"callback-data"` entry : "0x" + the hexadecimal encoded Usd estimate.
+```
+</iexec_out/computed.json>
+{ "callback-data" : "0x32303335372e363435363030" }
+```
+
 ### Run
 It is possible to run the application localy to test it out before deploying :
 (It is needed to put an input file inside `/tmp/iexec_in/` folder)
@@ -62,11 +86,13 @@ docker run \
     -e IEXEC_INPUT_FILE_NAME_1=input.json \
     -e IEXEC_INPUT_FILES_NUMBER=1 \
     nft-price-checker
+    web2 //or web3
 ```
 Once the execution ends, the result should be found in the folder
 `/tmp/iexec_out`.
 ```
 cat /tmp/iexec_out/result.txt
+cat /tmp/iexec_out/computed.txt
 ```
 
 ### Deploy

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -155,30 +156,46 @@ func ethPrice() float64 {
 }
 
 // Fetching prices from the results of the API to build the final string
-func getFloorPricesAndTotalValue(inputCollections []Collection) string {
+func getResult(inputCollections []Collection, outputType string) string {
 	ethSum := 0.0
 	result := ""
-	usdEstimate := ""
+	totalResult := ""
 	for _, inputCollection := range inputCollections {
 		inputCollectionFloorPrice := floorPrice(inputCollection.CollectionID)
 		inputCollectionNumberOfAssets := inputCollection.Count
 		ethCollectionTotalEstimate := (inputCollectionFloorPrice * inputCollectionNumberOfAssets)
 		ethSum += ethCollectionTotalEstimate
-		if inputCollectionFloorPrice == 0 {
-			result += fmt.Sprintf("  x %s cannot be found on Opensea \n", inputCollection.CollectionID)
-		} else {
-			result += fmt.Sprintf("--> %s Floor price = %f eth\n", inputCollection.CollectionID, inputCollectionFloorPrice)
-			result += fmt.Sprintf(" So %f*%f=%f eth\n", inputCollectionNumberOfAssets, inputCollectionFloorPrice, ethCollectionTotalEstimate)
+		if outputType == "web2" {
+			if inputCollectionFloorPrice == 0 {
+				result += fmt.Sprintf("  x %s cannot be found on Opensea \n", inputCollection.CollectionID)
+			} else {
+				result += fmt.Sprintf("--> %s Floor price = %f eth\n", inputCollection.CollectionID, inputCollectionFloorPrice)
+				result += fmt.Sprintf(" So %f*%f=%f eth\n", inputCollectionNumberOfAssets, inputCollectionFloorPrice, ethCollectionTotalEstimate)
+			}
 		}
 	}
-	if ethSum > 0 {
-		usdEstimate = fmt.Sprintf("%f eth\n Or %f Usd", ethSum, ethSum*ethPrice())
-	} else {
-		usdEstimate = "0 eth\n Or 0 Usd"
-	}
-	result += ("------------- \n The estimate total value of your portfolio is : " + usdEstimate)
+	usdEstimate := ethSum * ethPrice()
+	if outputType == "web2" {
+		if ethSum > 0 {
+			totalResult = fmt.Sprintf("%f eth\n Or %f Usd", ethSum, usdEstimate)
+		} else {
+			totalResult = "0 eth\n Or 0 Usd"
+		}
+		result += ("------------- \n The estimate total value of your portfolio is : " + totalResult)
 
-	return result
+		return result
+	} else {
+		return xEncode([]byte(fmt.Sprintf("%f", usdEstimate)))
+	}
+}
+
+func xEncode(b []byte) string {
+	encoded := make([]byte, len(b)*2+2)
+	usdEncoded := hex.EncodeToString(b)
+	copy(encoded, "0x")
+	copy(encoded[2:], []byte(usdEncoded))
+
+	return string(encoded)
 }
 
 // Writing into the result file
@@ -197,6 +214,14 @@ func writeFile(file string, str string) {
 
 func main() {
 
+	outputType := ""
+	if len(os.Args) > 1 {
+		outputType = os.Args[1]
+	}
+	if !(outputType == "web2" || (outputType == "web3")) {
+		log.Fatalln("Args[1] needs to be either equal to \"web2\" or \"web3\"")
+	}
+
 	var inputCollections []Collection
 
 	iexec_out := os.Getenv("IEXEC_OUT")
@@ -212,9 +237,12 @@ func main() {
 		log.Fatalln("Input or Dataset files are missing, exiting")
 	}
 
-	// Append some results in /iexec_out/
-	writeFile(iexec_out+"/result.txt", getFloorPricesAndTotalValue(inputCollections))
-
-	// Declare everything is computed
-	writeFile(iexec_out+"/computed.json", ("{ \"deterministic-output-path\" : \"" + iexec_out + "/result.txt\" }"))
+	if outputType == "web2" {
+		// Append some results in /iexec_out/
+		writeFile(iexec_out+"/result.txt", getResult(inputCollections, outputType))
+		// Declare everything is computed
+		writeFile(iexec_out+"/computed.json", ("{ \"deterministic-output-path\" : \"" + iexec_out + "/result.txt\" }"))
+	} else {
+		writeFile(iexec_out+"/computed.json", ("{ \"callback-data\" : \"" + getResult(inputCollections, outputType) + "\" }"))
+	}
 }
