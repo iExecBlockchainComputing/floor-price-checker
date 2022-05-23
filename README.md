@@ -52,7 +52,7 @@ The collection id can be found in the url of the Opensea Collection Page
 ie : for https://opensea.io/collection/boredapeyachtclub, the id is `boredapeyachtclub`
 
 ### Output
-The dapp is compatible with either "web2" (IPFS) or "web3" (callback) output. You just have to specifiy the wanted argument in the iexec_args.
+The dapp is compatible with either "web2" (IPFS) or "web3" (callback) output. You just have to specifiy the wanted behavior in the iexec_args.
 
 - The web2 workflow will produce a `/iexec_out/result.txt` file following a detailled plain text format :  
 ```
