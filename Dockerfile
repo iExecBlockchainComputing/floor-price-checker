@@ -3,6 +3,11 @@ FROM golang:1.16.0-alpine3.13
 
 WORKDIR /app
 
+COPY go.mod ./
+COPY go.sum ./
+
+RUN go mod download
+
 COPY ./src /app
 
 RUN apk --update add gcc build-base gcc-go

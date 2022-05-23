@@ -67,7 +67,7 @@ The dapp is compatible with either "web2" (IPFS) or "web3" (callback) output. Yo
  Or 20345.861600 Usd
 ```
 
-- The web3 workflow is designed to return the Usd global estimate of your portfolio as a callback-data. Thus, there is no `result.txt` file but in the `computed.json` you will find the `"callback-data"` entry : "0x" + the hexadecimal encoded Usd estimate.
+- The web3 workflow is designed to return the Usd global estimate of your portfolio as a callback-data. Thus, there is no `result.txt` file but in the `computed.json` you will find the `"callback-data"` entry : "0x" + the hexadecimal encoded Usd estimate. (You can find the `go-ethereum/common/hexutil` documentation [here](https://pkg.go.dev/github.com/ethereum/go-ethereum@v1.10.17/common/hexutil))
 ```
 </iexec_out/computed.json>
 { "callback-data" : "0x32303335372e363435363030" }
@@ -86,13 +86,13 @@ docker run \
     -e IEXEC_INPUT_FILE_NAME_1=input.json \
     -e IEXEC_INPUT_FILES_NUMBER=1 \
     nft-price-checker
-    web2 //or web3
+    web2    # or web3
 ```
 Once the execution ends, the result should be found in the folder
 `/tmp/iexec_out`.
 ```
 cat /tmp/iexec_out/result.txt
-cat /tmp/iexec_out/computed.txt
+cat /tmp/iexec_out/computed.json
 ```
 
 ### Deploy

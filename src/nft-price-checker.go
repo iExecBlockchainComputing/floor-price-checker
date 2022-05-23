@@ -1,13 +1,14 @@
 package main
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	goethereum "github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 //API request storage structs
@@ -176,26 +177,13 @@ func getResult(inputCollections []Collection, outputType string) string {
 	}
 	usdEstimate := ethSum * ethPrice()
 	if outputType == "web2" {
-		if ethSum > 0 {
-			totalResult = fmt.Sprintf("%f eth\n Or %f Usd", ethSum, usdEstimate)
-		} else {
-			totalResult = "0 eth\n Or 0 Usd"
-		}
+		totalResult = fmt.Sprintf("%f eth\n Or %f Usd", ethSum, usdEstimate)
 		result += ("------------- \n The estimate total value of your portfolio is : " + totalResult)
 
 		return result
 	} else {
-		return xEncode([]byte(fmt.Sprintf("%f", usdEstimate)))
+		return goethereum.Encode([]byte(fmt.Sprintf("%f", usdEstimate)))
 	}
-}
-
-func xEncode(b []byte) string {
-	encoded := make([]byte, len(b)*2+2)
-	usdEncoded := hex.EncodeToString(b)
-	copy(encoded, "0x")
-	copy(encoded[2:], []byte(usdEncoded))
-
-	return string(encoded)
 }
 
 // Writing into the result file
@@ -214,12 +202,14 @@ func writeFile(file string, str string) {
 
 func main() {
 
-	outputType := ""
-	if len(os.Args) > 1 {
-		outputType = os.Args[1]
+	if len(os.Args) < 2 {
+		log.Fatalln("Expecting at least two Args, with os.Args[1] either equal to \"web2\" or \"web3\"")
+		os.Exit(0)
 	}
-	if !(outputType == "web2" || (outputType == "web3")) {
+	outputType := os.Args[1]
+	if !(outputType == "web2" || outputType == "web3") {
 		log.Fatalln("Args[1] needs to be either equal to \"web2\" or \"web3\"")
+		os.Exit(0)
 	}
 
 	var inputCollections []Collection
@@ -236,13 +226,13 @@ func main() {
 	} else {
 		log.Fatalln("Input or Dataset files are missing, exiting")
 	}
-
+	result := getResult(inputCollections, outputType)
 	if outputType == "web2" {
 		// Append some results in /iexec_out/
-		writeFile(iexec_out+"/result.txt", getResult(inputCollections, outputType))
+		writeFile(iexec_out+"/result.txt", result)
 		// Declare everything is computed
 		writeFile(iexec_out+"/computed.json", ("{ \"deterministic-output-path\" : \"" + iexec_out + "/result.txt\" }"))
 	} else {
-		writeFile(iexec_out+"/computed.json", ("{ \"callback-data\" : \"" + getResult(inputCollections, outputType) + "\" }"))
+		writeFile(iexec_out+"/computed.json", ("{ \"callback-data\" : \"" + result + "\" }"))
 	}
 }
