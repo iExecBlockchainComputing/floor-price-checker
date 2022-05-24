@@ -40,6 +40,18 @@ type Input struct {
 	Collections  []Collection `json:"collections"`
 }
 
+//Estimates structs
+type Estimates struct {
+	EthTotalEstimate    float64
+	CollectionEstimates map[string]CollectionEstimate
+}
+
+type CollectionEstimate struct {
+	FloorPrice  float64
+	Count       float64
+	EthEstimate float64
+}
+
 func get(url string) []byte {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -157,36 +169,44 @@ func ethPrice() float64 {
 }
 
 // Fetching prices from the results of the API to build the final string
-func getResult(inputCollections []Collection, outputType string) string {
+func computeEstimates(inputCollections []Collection) Estimates {
 	ethSum := 0.0
-	result := ""
-	totalResult := ""
+	var estimates Estimates
+	collectionEstimates := make(map[string]CollectionEstimate)
 	for _, inputCollection := range inputCollections {
-		inputCollectionFloorPrice := floorPrice(inputCollection.CollectionID)
-		inputCollectionNumberOfAssets := inputCollection.Count
-		ethCollectionTotalEstimate := (inputCollectionFloorPrice * inputCollectionNumberOfAssets)
-		ethSum += ethCollectionTotalEstimate
-		if outputType == "web2" {
-			if inputCollectionFloorPrice == 0 {
-				result += fmt.Sprintf("  x %s cannot be found on Opensea \n", inputCollection.CollectionID)
+		floorPrice := floorPrice(inputCollection.CollectionID)
+		ethEstimate := (floorPrice * inputCollection.Count)
+
+		collectionEstimates[inputCollection.CollectionID] = CollectionEstimate{floorPrice, inputCollection.Count, ethEstimate}
+
+		ethSum += ethEstimate
+	}
+	estimates.CollectionEstimates = collectionEstimates
+	estimates.EthTotalEstimate = ethSum
+
+	return estimates
+}
+
+func presentEstimates(estimates Estimates, outputType string) string {
+	usdEstimate := ethPrice() * estimates.EthTotalEstimate
+	if outputType == "web2" {
+		result := ""
+		for collectionID, collectionEstimates := range estimates.CollectionEstimates {
+			if collectionEstimates.FloorPrice == 0 {
+				result += fmt.Sprintf("  x %s cannot be found on Opensea, or its floor price is equal to 0\n", collectionID)
 			} else {
-				result += fmt.Sprintf("--> %s Floor price = %f eth\n", inputCollection.CollectionID, inputCollectionFloorPrice)
-				result += fmt.Sprintf(" So %f*%f=%f eth\n", inputCollectionNumberOfAssets, inputCollectionFloorPrice, ethCollectionTotalEstimate)
+				result += fmt.Sprintf("--> %s Floor price = %f eth\n	So %f*%f=%f eth\n",
+					collectionID, collectionEstimates.FloorPrice,
+					collectionEstimates.Count, collectionEstimates.FloorPrice, collectionEstimates.EthEstimate)
 			}
 		}
-	}
-	usdEstimate := ethSum * ethPrice()
-	if outputType == "web2" {
-		totalResult = fmt.Sprintf("%f eth\n Or %f Usd", ethSum, usdEstimate)
-		result += ("------------- \n The estimate total value of your portfolio is : " + totalResult)
+		result += fmt.Sprintf("------------- \n The estimate total value of your portfolio is : %f eth\n Or %f Usd", estimates.EthTotalEstimate, usdEstimate)
 
 		return result
 	} else {
 		return goethereum.Encode([]byte(fmt.Sprintf("%f", usdEstimate)))
 	}
 }
-
-func saveResult()
 
 // Writing into the result file
 func writeFile(file string, str string) {
@@ -226,7 +246,7 @@ func main() {
 	} else {
 		log.Fatalln("Input or Dataset files are missing, exiting")
 	}
-	result := getResult(inputCollections, outputType)
+	result := presentEstimates(computeEstimates(inputCollections), outputType)
 	if outputType == "web2" {
 		// Append some results in /iexec_out/
 		writeFile(iexec_out+"/result.txt", result)
