@@ -170,19 +170,15 @@ func ethPrice() float64 {
 
 // Fetching prices from the results of the API to build the final string
 func computeEstimates(inputCollections []Collection) Estimates {
-	ethSum := 0.0
 	var estimates Estimates
-	collectionEstimates := make(map[string]CollectionEstimate)
+	estimates.CollectionEstimates = make(map[string]CollectionEstimate)
 	for _, inputCollection := range inputCollections {
 		floorPrice := floorPrice(inputCollection.CollectionID)
 		ethEstimate := floorPrice * inputCollection.Count
 
-		collectionEstimates[inputCollection.CollectionID] = CollectionEstimate{floorPrice, inputCollection.Count, ethEstimate}
-
-		ethSum += ethEstimate
+		estimates.CollectionEstimates[inputCollection.CollectionID] = CollectionEstimate{floorPrice, inputCollection.Count, ethEstimate}
+		estimates.EthTotalEstimate += ethEstimate
 	}
-	estimates.CollectionEstimates = collectionEstimates
-	estimates.EthTotalEstimate = ethSum
 
 	return estimates
 }
