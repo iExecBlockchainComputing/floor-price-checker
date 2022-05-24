@@ -175,7 +175,7 @@ func computeEstimates(inputCollections []Collection) Estimates {
 	collectionEstimates := make(map[string]CollectionEstimate)
 	for _, inputCollection := range inputCollections {
 		floorPrice := floorPrice(inputCollection.CollectionID)
-		ethEstimate := (floorPrice * inputCollection.Count)
+		ethEstimate := floorPrice * inputCollection.Count
 
 		collectionEstimates[inputCollection.CollectionID] = CollectionEstimate{floorPrice, inputCollection.Count, ethEstimate}
 
@@ -195,7 +195,7 @@ func presentEstimates(estimates Estimates, outputType string) string {
 			if collectionEstimates.FloorPrice == 0 {
 				result += fmt.Sprintf("  x %s cannot be found on Opensea, or its floor price is equal to 0\n", collectionID)
 			} else {
-				result += fmt.Sprintf("--> %s Floor price = %f eth\n	So %f*%f=%f eth\n",
+				result += fmt.Sprintf("--> %s Floor price = %f eth\n\t So %f*%f=%f eth\n",
 					collectionID, collectionEstimates.FloorPrice,
 					collectionEstimates.Count, collectionEstimates.FloorPrice, collectionEstimates.EthEstimate)
 			}
