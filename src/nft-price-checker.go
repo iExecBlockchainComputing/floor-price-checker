@@ -186,6 +186,8 @@ func getResult(inputCollections []Collection, outputType string) string {
 	}
 }
 
+func saveResult()
+
 // Writing into the result file
 func writeFile(file string, str string) {
 	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
@@ -204,12 +206,10 @@ func main() {
 
 	if len(os.Args) < 2 {
 		log.Fatalln("Expecting at least two Args, with os.Args[1] either equal to \"web2\" or \"web3\"")
-		os.Exit(0)
 	}
 	outputType := os.Args[1]
 	if !(outputType == "web2" || outputType == "web3") {
 		log.Fatalln("Args[1] needs to be either equal to \"web2\" or \"web3\"")
-		os.Exit(0)
 	}
 
 	var inputCollections []Collection
