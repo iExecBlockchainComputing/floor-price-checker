@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	goethereum "github.com/ethereum/go-ethereum/common/hexutil"
+	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 //API request storage structs
@@ -183,7 +183,7 @@ func computeEstimates(inputCollections []Collection) Estimates {
 	return estimates
 }
 
-func presentEstimates(estimates Estimates, outputType string) string {
+func estimatesToString(estimates Estimates, outputType string) string {
 	usdEstimate := ethPrice() * estimates.EthTotalEstimate
 	if outputType == "web2" {
 		result := ""
@@ -200,7 +200,7 @@ func presentEstimates(estimates Estimates, outputType string) string {
 
 		return result
 	} else {
-		return goethereum.Encode([]byte(fmt.Sprintf("%f", usdEstimate)))
+		return hexutil.Encode([]byte(fmt.Sprintf("%f", usdEstimate)))
 	}
 }
 
@@ -221,7 +221,7 @@ func writeFile(file string, str string) {
 func main() {
 
 	if len(os.Args) < 2 {
-		log.Fatalln("Expecting at least two Args, with os.Args[1] either equal to \"web2\" or \"web3\"")
+		log.Fatalln("Expecting one argument : \"web2\" or \"web3\"")
 	}
 	outputType := os.Args[1]
 	if !(outputType == "web2" || outputType == "web3") {
@@ -242,7 +242,7 @@ func main() {
 	} else {
 		log.Fatalln("Input or Dataset files are missing, exiting")
 	}
-	result := presentEstimates(computeEstimates(inputCollections), outputType)
+	result := estimatesToString(computeEstimates(inputCollections), outputType)
 	if outputType == "web2" {
 		// Append some results in /iexec_out/
 		writeFile(iexec_out+"/result.txt", result)
