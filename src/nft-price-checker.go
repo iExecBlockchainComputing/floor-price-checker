@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 //API request storage structs
@@ -36,6 +38,18 @@ type Collection struct {
 type Input struct {
 	OwnerAddress string       `json:"ownerAddress"`
 	Collections  []Collection `json:"collections"`
+}
+
+//Estimates structs
+type Estimates struct {
+	EthTotalEstimate    float64
+	CollectionEstimates map[string]CollectionEstimate
+}
+
+type CollectionEstimate struct {
+	FloorPrice  float64
+	Count       float64
+	EthEstimate float64
 }
 
 func get(url string) []byte {
@@ -155,30 +169,39 @@ func ethPrice() float64 {
 }
 
 // Fetching prices from the results of the API to build the final string
-func getFloorPricesAndTotalValue(inputCollections []Collection) string {
-	ethSum := 0.0
-	result := ""
-	usdEstimate := ""
+func computeEstimates(inputCollections []Collection) Estimates {
+	var estimates Estimates
+	estimates.CollectionEstimates = make(map[string]CollectionEstimate)
 	for _, inputCollection := range inputCollections {
-		inputCollectionFloorPrice := floorPrice(inputCollection.CollectionID)
-		inputCollectionNumberOfAssets := inputCollection.Count
-		ethCollectionTotalEstimate := (inputCollectionFloorPrice * inputCollectionNumberOfAssets)
-		ethSum += ethCollectionTotalEstimate
-		if inputCollectionFloorPrice == 0 {
-			result += fmt.Sprintf("  x %s cannot be found on Opensea \n", inputCollection.CollectionID)
-		} else {
-			result += fmt.Sprintf("--> %s Floor price = %f eth\n", inputCollection.CollectionID, inputCollectionFloorPrice)
-			result += fmt.Sprintf(" So %f*%f=%f eth\n", inputCollectionNumberOfAssets, inputCollectionFloorPrice, ethCollectionTotalEstimate)
-		}
-	}
-	if ethSum > 0 {
-		usdEstimate = fmt.Sprintf("%f eth\n Or %f Usd", ethSum, ethSum*ethPrice())
-	} else {
-		usdEstimate = "0 eth\n Or 0 Usd"
-	}
-	result += ("------------- \n The estimate total value of your portfolio is : " + usdEstimate)
+		floorPrice := floorPrice(inputCollection.CollectionID)
+		ethEstimate := floorPrice * inputCollection.Count
 
-	return result
+		estimates.CollectionEstimates[inputCollection.CollectionID] = CollectionEstimate{floorPrice, inputCollection.Count, ethEstimate}
+		estimates.EthTotalEstimate += ethEstimate
+	}
+
+	return estimates
+}
+
+func estimatesToString(estimates Estimates, outputType string) string {
+	usdEstimate := ethPrice() * estimates.EthTotalEstimate
+	if outputType == "web2" {
+		result := ""
+		for collectionID, collectionEstimates := range estimates.CollectionEstimates {
+			if collectionEstimates.FloorPrice == 0 {
+				result += fmt.Sprintf("  x %s cannot be found on Opensea, or its floor price is equal to 0\n", collectionID)
+			} else {
+				result += fmt.Sprintf("--> %s Floor price = %f eth\n\t So %f*%f=%f eth\n",
+					collectionID, collectionEstimates.FloorPrice,
+					collectionEstimates.Count, collectionEstimates.FloorPrice, collectionEstimates.EthEstimate)
+			}
+		}
+		result += fmt.Sprintf("------------- \n The estimate total value of your portfolio is : %f eth\n Or %f Usd", estimates.EthTotalEstimate, usdEstimate)
+
+		return result
+	} else {
+		return hexutil.Encode([]byte(fmt.Sprintf("%f", usdEstimate)))
+	}
 }
 
 // Writing into the result file
@@ -197,6 +220,14 @@ func writeFile(file string, str string) {
 
 func main() {
 
+	if len(os.Args) < 2 {
+		log.Fatalln("Expecting one argument : \"web2\" or \"web3\"")
+	}
+	outputType := os.Args[1]
+	if !(outputType == "web2" || outputType == "web3") {
+		log.Fatalln("Args[1] needs to be either equal to \"web2\" or \"web3\"")
+	}
+
 	var inputCollections []Collection
 
 	iexec_out := os.Getenv("IEXEC_OUT")
@@ -211,10 +242,13 @@ func main() {
 	} else {
 		log.Fatalln("Input or Dataset files are missing, exiting")
 	}
-
-	// Append some results in /iexec_out/
-	writeFile(iexec_out+"/result.txt", getFloorPricesAndTotalValue(inputCollections))
-
-	// Declare everything is computed
-	writeFile(iexec_out+"/computed.json", ("{ \"deterministic-output-path\" : \"" + iexec_out + "/result.txt\" }"))
+	result := estimatesToString(computeEstimates(inputCollections), outputType)
+	if outputType == "web2" {
+		// Append some results in /iexec_out/
+		writeFile(iexec_out+"/result.txt", result)
+		// Declare everything is computed
+		writeFile(iexec_out+"/computed.json", ("{ \"deterministic-output-path\" : \"" + iexec_out + "/result.txt\" }"))
+	} else {
+		writeFile(iexec_out+"/computed.json", ("{ \"callback-data\" : \"" + result + "\" }"))
+	}
 }
