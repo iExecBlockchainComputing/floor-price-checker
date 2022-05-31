@@ -1,5 +1,9 @@
 # Golang OpenSea's NFT Collections floor price checker
-+total portfolio value estimation
+<p align="center">
+    <img src="./logo.png" alt="drawing" width="150" />  
+</p>
+
+Check the Opensea floor price of the NFTs you own, and calculate the total estimate of your NFT portfolio in $eth and $usd.  
 
 ### Build
 First, let's build the docker image
